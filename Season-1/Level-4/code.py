@@ -12,6 +12,7 @@ the tests.py again to recreate it.
 import sqlite3
 import os
 from flask import Flask, request
+import re
 
 ### Unrelated to the exercise -- Starts here -- Please ignore
 app = Flask(__name__)
@@ -123,33 +124,34 @@ class DB_CRUD_ops(object):
     # Example: get_stock_price('MSFT') will result into executing
     # SELECT price FROM stocks WHERE symbol = 'MSFT'
     def get_stock_price(self, stock_symbol):
-        # building database from scratch as it is more suitable for the purpose of the lab
-        db = Create()
-        con = Connect()
-        try:
-            path = os.path.dirname(os.path.abspath(__file__))
-            db_path = os.path.join(path, 'level-4.db')
-            db_con = con.create_connection(db_path)
-            cur = db_con.cursor()
+     stock_symbol = re.match(r'[A-Z]+', stock_symbol)[0] 
 
-            res = "[METHOD EXECUTED] get_stock_price\n"
-            query = "SELECT price FROM stocks WHERE symbol = '" + stock_symbol + "'"
-            res += "[QUERY] " + query + "\n"
-            if ';' in query:
-                res += "[SCRIPT EXECUTION]\n"
-                cur.executescript(query)
-            else:
-                cur.execute(query)
-                query_outcome = cur.fetchall()
-                for result in query_outcome:
-                    res += "[RESULT] " + str(result) + "\n"
-            return res
-
-        except sqlite3.Error as e:
-            print(f"ERROR: {e}")
-
-        finally:
-            db_con.close()
+     db = Create()
+     con = Connect()
+     try:
+        path = os.path.dirname(os.path.abspath(__file__))
+        db_path = os.path.join(path, 'level-4.db')
+        db_con = con.create_connection(db_path)
+        cur = db_con.cursor()
+        
+        res = "[METHOD EXECUTED] get_stock_price\n"
+        query = "SELECT price FROM stocks WHERE symbol = '" + stock_symbol + "'"
+        res += "[QUERY] " + query + "\n"
+        if ';' in query:
+            res += "[SCRIPT EXECUTION]\n"
+            cur.executescript(query)
+        else:
+            cur.execute(query)
+            query_outcome = cur.fetchall()
+            for result in query_outcome:
+                res += "[RESULT] " + str(result) + "\n"
+        return res
+            
+     except sqlite3.Error as e:
+        print(f"ERROR: {e}")
+        
+     finally:
+        db_con.close()
 
     # updates stock price
     def update_stock_price(self, stock_symbol, price):
