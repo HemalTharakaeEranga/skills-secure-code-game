@@ -1,21 +1,10 @@
-// Welcome to Secure Code Game Season-2/Level-4!
-
-// Follow the instructions below to get started:
-
-// 1. test.js is passing but the code here is vulnerable
-// 2. Review the code. Can you spot the bugs(s)?
-// 3. Fix the code.js but ensure that test.js passes
-// 4. Run hack.js and if passing then CONGRATS!
-// 5. If stuck then read the hint
-// 6. Compare your solution with solution.js
-
 const express = require("express");
 const bodyParser = require("body-parser");
 const libxmljs = require("libxmljs");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-const { exec } = require("node:child_process");
+const { exec } = require("child_process");
 const app = express();
 
 app.use(bodyParser.json());
@@ -41,58 +30,60 @@ app.post("/ufo", (req, res) => {
   const contentType = req.headers["content-type"];
 
   if (contentType === "application/json") {
-    console.log("Received JSON data:", req.body);
-    res.status(200).json({ ufo: "Received JSON data from an unknown planet." });
+      console.log("Received JSON data:", req.body);
+      res.status(200).json({ ufo: "Received JSON data from an unknown planet." });
   } else if (contentType === "application/xml") {
-    try {
-      const xmlDoc = libxmljs.parseXml(req.body, {
-        replaceEntities: true,
-        recover: true,
-        nonet: false,
-      });
-
-      console.log("Received XML data from XMLon:", xmlDoc.toString());
-
-      const extractedContent = [];
-
-      xmlDoc
-        .root()
-        .childNodes()
-        .forEach((node) => {
-          if (node.type() === "element") {
-            extractedContent.push(node.text());
+      try {
+          // Check if the request body starts with an XML tag
+          if (!req.body.trim().startsWith("<")) {
+              throw new Error("Start tag expected, '<' not found");
           }
-        });
 
-      // Secret feature to allow an "admin" to execute commands
-      if (
-        xmlDoc.toString().includes('SYSTEM "') &&
-        xmlDoc.toString().includes(".admin")
-      ) {
-        extractedContent.forEach((command) => {
-          exec(command, (err, output) => {
-            if (err) {
-              console.error("could not execute command: ", err);
-              return;
-            }
-            console.log("Output: \n", output);
-            res.status(200).set("Content-Type", "text/plain").send(output);
+          const xmlDoc = libxmljs.parseXml(req.body, {
+              replaceEntities: false, // Disable entity replacement
+              preserveWhitespace: true, // Preserve whitespace
+              explicitArray: false, // Disable explicit array creation
+              normalize: true, // Normalize whitespace and remove redundant nodes
+              normalizeTags: true, // Normalize tag names
+              recovery: true, // Enable recovery mode to handle invalid XML
+              xmlns: true, // Enable XML namespaces
           });
-        });
-      } else {
-        res
-          .status(200)
-          .set("Content-Type", "text/plain")
-          .send(extractedContent.join(" "));
+
+          console.log("Received XML data from XMLon:", xmlDoc.toString());
+
+          const extractedContent = [];
+
+          xmlDoc
+              .root()
+              .childNodes()
+              .forEach((node) => {
+                  if (node.type() === "element") {
+                      extractedContent.push(node.text());
+                  }
+              });
+
+          if (
+              req.body.includes('SYSTEM "') &&
+              req.body.includes(".admin")
+          ) {
+              console.error("Blocked attempt to access .admin file");
+              res.status(400).send("Invalid XML: Malicious attempt detected.");
+              return;
+          } else {
+              res
+                  .status(200)
+                  .set("Content-Type", "text/plain")
+                  .send(extractedContent.join(" "));
+          }
+      } catch (error) {
+          console.error("XML parsing or validation error:", error.message);
+          res.status(400).send("Invalid XML: " + error.message);
       }
-    } catch (error) {
-      console.error("XML parsing or validation error:", error.message);
-      res.status(400).send("Invalid XML: " + error.message);
-    }
   } else {
-    res.status(405).send("Unsupported content type");
+      res.status(405).send("Unsupported content type");
   }
 });
+
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
