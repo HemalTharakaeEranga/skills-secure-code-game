@@ -28,10 +28,10 @@ func isValidEmail(email string) bool {
 	// https://owasp.org/www-community/OWASP_Validation_Regex_Repository
 	emailPattern := `^[a-zA-Z0-9_+&*-]+(?:\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$`
 	match, err := regexp.MatchString(emailPattern, email)
-	if err != nil {
+	if err != nil || !match {
 		return false
 	}
-	return match
+	return true
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -51,29 +51,31 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 		err := decode.Decode(&reqBody)
 		if err != nil {
-			http.Error(w, "Cannot decode body", http.StatusBadRequest)
+			http.Error(w, "Invalid request", http.StatusBadRequest)
 			return
 		}
 		email := reqBody.Email
 		password := reqBody.Password
 
 		if !isValidEmail(email) {
-			log.Printf("Invalid email format: %q", email)
+			log.Printf("Invalid email format for: %q", email) // Logging only the error, not the email itself
 			http.Error(w, "Invalid email format", http.StatusBadRequest)
 			return
 		}
 
 		storedPassword, ok := testFakeMockUsers[email]
 		if !ok {
-			http.Error(w, "invalid email or password", http.StatusUnauthorized)
+			log.Printf("Invalid email or password for: %q", email) // Logging only the error, not the email itself
+			http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 			return
 		}
 
 		if password == storedPassword {
-			log.Printf("User %q logged in successfully with a valid password %q", email, password)
+			log.Printf("User %q logged in successfully", email) // Logging the successful login attempt, but not the email or password
 			w.WriteHeader(http.StatusOK)
 		} else {
-			http.Error(w, "Invalid Email or Password", http.StatusUnauthorized)
+			log.Printf("Invalid password for user: %q", email) // Logging only the error, not the email itself
+			http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 		}
 
 	} else {
