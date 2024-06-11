@@ -95,7 +95,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/login", loginHandler)
 	log.Print("Server started. Listening on :8080")
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(":8081", nil)
 	if err != nil {
 		log.Fatalf("HTTP server ListenAndServe: %q", err)
 	}
