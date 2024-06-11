@@ -36,7 +36,6 @@ func isValidEmail(email string) bool {
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 
-	// Test users
 	var testFakeMockUsers = map[string]string{
 		"user1@example.com": "password12345",
 		"user2@example.com": "B7rx9OkWVdx13$QF6Imq",
@@ -44,50 +43,48 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		"user4@example.com": "Log4Fun",
 	}
 
-	if r.Method == "POST" {
-
-		decode := json.NewDecoder(r.Body)
-		decode.DisallowUnknownFields()
-
-		err := decode.Decode(&reqBody)
-		if err != nil {
-			http.Error(w, "Invalid request", http.StatusBadRequest)
-			return
-		}
-		email := reqBody.Email
-		password := reqBody.Password
-
-		if !isValidEmail(email) {
-			log.Printf("Invalid email format for: %q", email) // Logging only the error, not the email itself
-			http.Error(w, "Invalid email format", http.StatusBadRequest)
-			return
-		}
-
-		storedPassword, ok := testFakeMockUsers[email]
-		if !ok {
-			log.Printf("Invalid email or password for: %q", email) // Logging only the error, not the email itself
-			http.Error(w, "Invalid email or password", http.StatusUnauthorized)
-			return
-		}
-
-		if password == storedPassword {
-			log.Printf("User %q logged in successfully", email) // Logging the successful login attempt, but not the email or password
-			w.WriteHeader(http.StatusOK)
-		} else {
-			log.Printf("Invalid password for user: %q", email) // Logging only the error, not the email itself
-			http.Error(w, "Invalid email or password", http.StatusUnauthorized)
-		}
-
-	} else {
+	if r.Method != "POST" {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
 	}
+
+	decode := json.NewDecoder(r.Body)
+	decode.DisallowUnknownFields()
+
+	if err := decode.Decode(&reqBody); err != nil {
+		http.Error(w, "Cannot decode body", http.StatusBadRequest)
+		return
+	}
+
+	if !isValidEmail(reqBody.Email) {
+		http.Error(w, "Invalid email format", http.StatusBadRequest)
+		return
+	}
+
+	storedPassword, ok := testFakeMockUsers[reqBody.Email]
+	if !ok {
+		http.Error(w, "Invalid Email or Password", http.StatusUnauthorized)
+		return
+	}
+
+	if reqBody.Password != storedPassword {
+		http.Error(w, "Invalid Email or Password", http.StatusUnauthorized)
+		return
+	}
+
+	// Log a generic message without sensitive information
+	log.Printf("Successful login request")
+	w.WriteHeader(http.StatusOK)
 }
 
 func main() {
 	http.HandleFunc("/login", loginHandler)
-	log.Print("Server started. Listening on :8080")
-	err := http.ListenAndServe(":8080", nil)
+	log.Print("Server started. Listening on :8081")
+	err := http.ListenAndServe(":8081", nil)
 	if err != nil {
 		log.Fatalf("HTTP server ListenAndServe: %q", err)
 	}
 }
+
+
+
