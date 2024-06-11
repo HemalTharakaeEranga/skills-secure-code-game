@@ -10,7 +10,7 @@
 #             > workflows/
 #                         > jarvis-code.yml
 
-name: Jarvis Workflow
+ame: CODE - Jarvis Gone Wrong
 
 on:
   push:
@@ -20,35 +20,10 @@ on:
 jobs:
   jarvis:
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Run tests
-      run: |
-        pytest tests/
-        
-    - name: Publish results
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -X POST -d @results.json https://www.githubstatus.com/api/v2/status.json
-
-    - name: Check GitHub Status
-      run: |
-        STATUS=$(curl -s https://www.githubstatus.com/api/v2/status.json | jq -r '.status.description')
-        echo "GitHub Status: $STATUS"
+      - name: Check GitHub Status
+        run: |
+          STATUS=$(curl -s https://www.githubstatus.com/api/v2/status.json | jq -r '.status.description')
+          echo "GitHub Status: $STATUS"
